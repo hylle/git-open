@@ -39,9 +39,19 @@ function get_remote()
   fi
   if [ ${remote:0:4} = 'http' ]; then
     echo ${remote##*@(.org/|.com/)}
+  elif [ ${remote:0:21} = 'ssh://git@git.konform' ]; then
+    echo ${remote##*@(:7999/)}
   else
     echo ${remote##*:}
   fi
+}
+
+function get_repo() {
+  echo ${remote##*@(/)}
+}
+
+function get_project() {
+  echo ${remote%\/*}
 }
 
 # Check if the branch exists remotely
@@ -55,9 +65,24 @@ function branch_exists()
 #
 # Main
 #
-if ! repo=$(get_remote); then
+if ! remote=$(get_remote); then
   exit 1
+# else
+# 	echo "> [$remote]"
 fi
+
+if ! repo=$(get_repo); then
+  exit 1
+# else
+# 	echo "> [$repo]"
+fi
+
+if ! project=$(get_project); then
+  exit 1
+# else
+# 	echo "> [$project]"
+fi
+
 
 # Specify the service to be used
 function url()
@@ -72,6 +97,14 @@ function url()
 
   if [[ $(git config remote.origin.url) =~ "gitlab" ]]; then
     echo "https://gitlab.com/${repo%.*}/tree/"
+  fi
+
+  if [[ $(git config remote.origin.url) =~ "konform" ]]; then
+    # https://git.konform.com/projects/KONFORM/repos/cms-5/pull-requests?create&sourceBranch=refs%2Fheads%2Fbugfix%2FCMS-129
+    # https://git.konform.com/projects/KONFORM/repos/cms-5/browse?at=refs/heads/bugfix/CMS-129
+    # https://git.konform.com/projects/KONFORM/repos/cms-5/pull-requests?create&sourceBranch=refs/heads/bugfix/CMS-129
+    echo "https://git.konform.com/projects/${project}/repos/${repo%.*}/pull-requests?create&sourceBranch=refs/heads/"
+    # echo "https://gitlab.com/${repo%.*}/tree/"
   fi
 }
 
